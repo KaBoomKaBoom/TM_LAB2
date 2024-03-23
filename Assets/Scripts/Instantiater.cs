@@ -9,14 +9,18 @@ public class Instantiater : MonoBehaviour
     public GameObject cellTemplate;
     public GameObject cellLeader;
     public GameObject cellWarriot;
-    public GameObject cellIntr;
+    public GameObject cellUndead;
 
+    public int count = 0;
 
-
-    public float generationInterval = 0.2f;
+    public float generationInterval = 0.5f;
     public static bool pause = false;
 
-    int[ , ] cellsArray;
+	public int generationCount = 0; // Generation counter
+	public Text generationCountText; // Reference to the UI Text element
+    public InputField generationCountInputField;
+
+	int[ , ] cellsArray;
 
     public int gridHeight;
     private int gridWidth;
@@ -33,8 +37,10 @@ public class Instantiater : MonoBehaviour
 
     private float cellSize;
 
-    void Update()
+	public Button simulateButton;
+	void Update()
     {
+
         // Check if the 's' key is pressed
         if (Input.GetKeyDown(KeyCode.S))
         {
@@ -50,11 +56,12 @@ public class Instantiater : MonoBehaviour
         }
     }
 
+
         // Method to fill a random area with cells
     public void FillRandomArea()
     {
-        int startX = Random.Range(0, gridWidth); // Random start X position
-        int startY = Random.Range(0, gridHeight); // Random start Y position
+        int startX = Random.Range(0, gridWidth - 1); // Random start X position
+        int startY = Random.Range(0, gridHeight - 1); // Random start Y position
         int areaWidth = Random.Range(5, 15); // Random width of the area
         int areaHeight = Random.Range(5, 15); // Random height of the area
 
@@ -74,7 +81,7 @@ public class Instantiater : MonoBehaviour
         // Fill random alive cells
         for (int i = 0; i < 1500; i++)
         {
-            cellsArray[Random.Range(0, gridHeight), Random.Range(0, gridWidth)] = 1;
+            cellsArray[Random.Range(0, gridHeight-1), Random.Range(0, gridWidth-1)] = 1;
         }
 
         // Render cells after filling random cells
@@ -85,6 +92,7 @@ public class Instantiater : MonoBehaviour
     // Method to start the program
    public void StartProgram()
     {
+        print(gridWidth + " x " + gridHeight);
         gridWidth = Mathf.RoundToInt(gridHeight * Camera.main.aspect);
 
         cellsArray = new int[gridHeight, gridWidth];
@@ -112,21 +120,25 @@ public class Instantiater : MonoBehaviour
     }
 
 
-    void NewGenerationUpdate(){
-        if (Input.GetMouseButton(2))
+    void NewGenerationUpdate() {
+        int.TryParse(generationCountInputField.text, out int numGenerations);
+        if(numGenerations == 0) numGenerations = int.MaxValue;
+		if (numGenerations == generationCount)
         {
             if (pause==true) pause = false; else pause = true;
             print(" Pause " + pause);
-        }
+			UserInput();
+		}
         else
-        {           
+        {
             if (pause==false)
             {
                 RenderCells();
                 ApplyRules();
-                //Environment();
-
-            }
+				generationCount++; // Increment generation counter
+				UpdateGenerationCountText(); // Update UI text with generation count
+				//Environment();
+			}
             UserInput();
         }
     }
@@ -135,7 +147,7 @@ public class Instantiater : MonoBehaviour
     {
         if (Input.GetKey("p"))
         {
-            
+            generationCount++;
             if (pause == true) pause = false; else pause = true;
             print(" Pause " + pause);
             
@@ -180,12 +192,12 @@ public class Instantiater : MonoBehaviour
 
                 print(" x= " + x);
                 print(" y= " + y);
-                if (x > 0 && x < gridWidth && y > 0 && y < gridHeight) cellsArray[y, x] = 0;
+                if (x > 0 && x < gridWidth && y > 0 && y < gridHeight) cellsArray[y, x] = 3;
                 if(zones)UserEnvironment(x, y);
             }
             RenderCells();
         }
-        else if (Input.GetKey("w"))
+        /*else if (Input.GetKey("w"))
         {
             Vector3 point = new Vector3();
             Vector3 mousePos = Input.mousePosition;
@@ -205,8 +217,8 @@ public class Instantiater : MonoBehaviour
                 if (zones) UserEnvironment(x, y);
             }
             RenderCells();
-        }
-        else if (Input.GetKey("a"))
+        }*/
+        else if (Input.GetKey("h"))
         {
             Vector3 point = new Vector3();
             Vector3 mousePos = Input.mousePosition;
@@ -234,7 +246,7 @@ public class Instantiater : MonoBehaviour
             }
             RenderCells();
         }
-        else if (Input.GetKey("r"))
+        else if (Input.GetKey("w"))
         {
             Vector3 point = new Vector3();
             Vector3 mousePos = Input.mousePosition;
@@ -305,7 +317,16 @@ public class Instantiater : MonoBehaviour
                     );
                     Instantiate(cellWarriot, cellPosition, Quaternion.identity);
                 }
-            }
+				if (cellsArray[i, j] == 4)
+				{
+					Vector3 cellPosition = new Vector3(
+						j * cellSize + cellSize / 2,
+						(cellSize * gridHeight) - (i * cellSize + cellSize / 2),
+						0
+					);
+					Instantiate(cellUndead, cellPosition, Quaternion.identity);
+				}
+			}
         }
 
     }
@@ -319,9 +340,20 @@ public class Instantiater : MonoBehaviour
         deadPos = DeadZone.transform.position;
 
         int[,] nextGenGrid = new int[gridHeight, gridWidth];
-        for (int i = 0; i < gridHeight; i++)
+        if (generationCount % 3 == 0)
         {
-            for (int j = 0; j < gridWidth; j++)
+            print("undead");
+            for (int i = 0; i < 50; i++)
+            {
+                if (Random.Range(0f, 1f) > 0.50f)
+                {
+                    nextGenGrid[Random.Range(1, gridHeight - 1), Random.Range(1, gridWidth - 1)] = 4;
+                }
+            }
+		}
+        for (int i = 1; i < gridHeight-1; i++)
+        {
+            for (int j = 1; j < gridWidth-1; j++)
             {
                 int livingNeighbours = CountLivingNeighbours(i, j);
 
@@ -336,18 +368,61 @@ public class Instantiater : MonoBehaviour
                 }
                 else if (ControlDiablo(i, j))
                 {
-                    nextGenGrid[i - 1, j] = 0;
-                    nextGenGrid[i, j - 1] = 0;
-                    nextGenGrid[i, j + 1] = 0;
-                    nextGenGrid[i + 1, j] = 0;
-                    cellsArray[i - 1, j] = 0;
-                    cellsArray[i, j - 1] = 0;
-                    cellsArray[i, j + 1] = 0;
-                    cellsArray[i + 1, j] = 0;
 
-                    nextGenGrid[i, j] = 3;
-                }
-                else if (livingNeighbours == 3 ) 
+					if (livingNeighbours <= 3 && livingNeighbours >= 1)
+					{
+						nextGenGrid[i - 1, j] = 3;
+						nextGenGrid[i, j - 1] = 3;
+						nextGenGrid[i, j + 1] = 3;
+						nextGenGrid[i + 1, j] = 3;
+						cellsArray[i - 1, j] = 0;
+						cellsArray[i, j - 1] = 0;
+						cellsArray[i, j + 1] = 0;
+						cellsArray[i + 1, j] = 0;
+
+						nextGenGrid[i, j] = 3;
+					}
+					else
+					{
+						int living = CountLivingNeighbours(i, j);
+						if (living <= 3 && living!=0 )
+						{
+							nextGenGrid[i - 1, j] = 3;
+							nextGenGrid[i, j - 1] = 3;
+							nextGenGrid[i, j + 1] = 3;
+							nextGenGrid[i + 1, j] = 3;
+							cellsArray[i - 1, j] = 0;
+							cellsArray[i, j - 1] = 0;
+							cellsArray[i, j + 1] = 0;
+							cellsArray[i + 1, j] = 0;
+
+							nextGenGrid[i, j] = 3;
+						}
+						else
+						{
+							// Keep Diablo cell dead if it doesn't meet the reproduction condition
+							nextGenGrid[i, j] = 3;
+						}
+					}
+
+					
+				}
+				else if (cellsArray[i, j] == 4)
+				{
+					// Kill neighboring cells by setting their states to 0 (dead)
+					if (Control(i - 1, j)) nextGenGrid[i - 1, j] = 0;
+					if (Control(i + 1, j)) nextGenGrid[i + 1, j] = 0;
+					if (Control(i, j - 1)) nextGenGrid[i, j - 1] = 0;
+					if (Control(i, j + 1)) nextGenGrid[i, j + 1] = 0;
+					if (Control(i - 1, j - 1)) nextGenGrid[i - 1, j - 1] = 0;
+					if (Control(i - 1, j + 1)) nextGenGrid[i - 1, j + 1] = 0;
+					if (Control(i + 1, j - 1)) nextGenGrid[i + 1, j - 1] = 0;
+					if (Control(i + 1, j + 1)) nextGenGrid[i + 1, j + 1] = 0;
+
+					// Mark the cellIntr itself for the next generation
+					nextGenGrid[i, j] = 4;
+				}
+				else if (livingNeighbours == 3)
                 { // reproduction, exactly 3 neighgbours
                     nextGenGrid[i, j] = 1;
                 }
@@ -355,20 +430,36 @@ public class Instantiater : MonoBehaviour
                 { // exactly 2 neigh, the live cell survives
                     nextGenGrid[i, j] = 1;
                 }
-
+                else if (livingNeighbours > 3 || livingNeighbours<2)
+                {
+                    //die from overpopulation
+					nextGenGrid[i, j] = 0;
+				}
 
                 if (zones)
                 {
                     bool fertile = PosFertile(j * cellSize + cellSize / 2, (cellSize * gridHeight) - (i * cellSize + cellSize / 2));
                     bool dead = PosDead(j * cellSize + cellSize / 2, (cellSize * gridHeight) - (i * cellSize + cellSize / 2));
-                    if (dead)
+                    if (dead )
                     {
                         //print(i + " " + j + " dead");
-                        nextGenGrid[i, j] = 0;
-                    }
+                        if (cellsArray[i, j] == 4) nextGenGrid[i, j] = 4;
+                        else
+                        {
+                            nextGenGrid[i, j] = 0;
+                            if (count % 3 == 0)
+                            {
+
+                                nextGenGrid[i, j] = 3;
+                                count++;
+                            }
+                        }		
+					}
                     else
                         if (fertile)
                     {
+						if (cellsArray[i, j] == 4) nextGenGrid[i, j] = 4;
+						if (cellsArray[i, j] == 3) nextGenGrid[i, j] = 1;
                         if (livingNeighbours == 2 || livingNeighbours == 3)
                         { // reproduction,  2 to 3 neighgbours
                             nextGenGrid[i, j] = 1;
@@ -401,72 +492,12 @@ public class Instantiater : MonoBehaviour
             for (int i = 5; i <= 20; i++)
                 for (int j = 50; j <= 70; j++)
                 {
-                    cellsArray[j, i] = 0;
+                    cellsArray[j, i] = 3;
                 }
             //print(" Dead Zone ");
         }
 
-        //mine zone
-        if (x > 130 && x < 153 && y > 70 && y < 80)
-        {
-            for (int i = 130; i <= 153; i++)
-                for (int j = 70; j <= 80; j++)
-                {
-                    cellsArray[j, i] = 0;
-                }
-
-            for (int j = 71; j <= 75; j++)
-            {
-                cellsArray[j, 133] = 1;
-                cellsArray[j, 137] = 1;
-                cellsArray[j, 139] = 1;
-            }
-            cellsArray[72, 134] = 1;
-            cellsArray[72, 136] = 1;
-            cellsArray[73, 135] = 1;
-
-            cellsArray[71, 141] = 1;
-            cellsArray[72, 141] = 1;
-            cellsArray[73, 141] = 1;
-            cellsArray[74, 141] = 1;
-            cellsArray[75, 141] = 1;
-
-            cellsArray[72, 142] = 1;
-            cellsArray[73, 143] = 1;
-            cellsArray[74, 144] = 1;
-            cellsArray[75, 145] = 1;
-            cellsArray[74, 145] = 1;
-            cellsArray[73, 145] = 1;
-            cellsArray[72, 145] = 1;
-            cellsArray[71, 145] = 1;
-
-            cellsArray[71, 147] = 1;
-            cellsArray[72, 147] = 1;
-            cellsArray[73, 147] = 1;
-            cellsArray[74, 147] = 1;
-            cellsArray[75, 147] = 1;
-
-            cellsArray[71, 148] = 1;
-            cellsArray[73, 148] = 1;
-            cellsArray[75, 148] = 1;
-
-            cellsArray[71, 149] = 1;
-            cellsArray[75, 149] = 1;
-
-            cellsArray[73, 151] = 1;
-            cellsArray[74, 151] = 1;
-            cellsArray[71, 152] = 1;
-            cellsArray[72, 152] = 1;
-            cellsArray[73, 152] = 1;
-            cellsArray[74, 152] = 1;
-            cellsArray[75, 152] = 1;
-            cellsArray[71, 153] = 1;
-            cellsArray[73, 153] = 1;
-            cellsArray[74, 153] = 1;
-            cellsArray[72, 154] = 1;
         
-            print(" MINE Zone ");
-        }
     }
 
     public void Environment()
@@ -551,18 +582,23 @@ public class Instantiater : MonoBehaviour
 
     int CountLivingNeighbours(int i, int j){
         int result = 0;
-        for (int iNeigh = i-1; iNeigh < i+2; iNeigh++){ // i-1, i, i+1
-            for (int jNeigh = j-1; jNeigh < j+2; jNeigh++){ // j-1, j, j+1
-                if (iNeigh == i && jNeigh == j) continue;
-                try{
-                    result += cellsArray[iNeigh, jNeigh];
-                }
-                catch{}
+        for (int iNeigh = i-1; iNeigh <= i+1; iNeigh++){ // i-1, i, i+1
+            for (int jNeigh = j-1; jNeigh <= j+1; jNeigh++){ // j-1, j, j+1
+                if (cellsArray[iNeigh, jNeigh] != 0)
+                   result += 1;
+
             }
         }
 
         return result;
     }
+	void UpdateGenerationCountText()
+	{
+		if (generationCountText != null)
+		{
+			generationCountText.text = "Generation: " + generationCount.ToString();
+		}
+	}
 
 }
 

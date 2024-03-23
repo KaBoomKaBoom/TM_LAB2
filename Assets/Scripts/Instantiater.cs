@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -23,7 +24,7 @@ public class Instantiater : MonoBehaviour
 	int[ , ] cellsArray;
 
     public int gridHeight;
-    private int gridWidth;
+    public int gridWidth;
 
     public GameObject FertileZone;
     public GameObject DeadZone;
@@ -40,9 +41,9 @@ public class Instantiater : MonoBehaviour
 	public Button simulateButton;
 	void Update()
     {
-
-        // Check if the 's' key is pressed
-        if (Input.GetKeyDown(KeyCode.S))
+		
+		// Check if the 's' key is pressed
+		if (Input.GetKeyDown(KeyCode.S))
         {
             // Start the program
             StartProgram();
@@ -57,19 +58,19 @@ public class Instantiater : MonoBehaviour
     }
 
 
-        // Method to fill a random area with cells
-    public void FillRandomArea()
+	// Method to fill a random area with cells
+	public void FillRandomArea()
     {
-        int startX = Random.Range(0, gridWidth - 1); // Random start X position
-        int startY = Random.Range(0, gridHeight - 1); // Random start Y position
-        int areaWidth = Random.Range(5, 15); // Random width of the area
-        int areaHeight = Random.Range(5, 15); // Random height of the area
+        int startX = UnityEngine.Random.Range(0, gridWidth - 1); // Random start X position
+        int startY = UnityEngine.Random.Range(0, gridHeight - 1); // Random start Y position
+        int areaWidth = UnityEngine.Random.Range(20, 60); // Random width of the area
+        int areaHeight = UnityEngine.Random.Range(20, 60); // Random height of the area
 
         for (int i = startY; i < startY + areaHeight && i < gridHeight; i++)
         {
             for (int j = startX; j < startX + areaWidth && j < gridWidth; j++)
             {
-                cellsArray[i, j] = Random.Range(0, 2); // Randomly set cell state (0 or 1)
+                cellsArray[i, j] = UnityEngine.Random.Range(0, 2); // Randomly set cell state (0 or 1)
             }
         }
     }
@@ -81,7 +82,7 @@ public class Instantiater : MonoBehaviour
         // Fill random alive cells
         for (int i = 0; i < 1500; i++)
         {
-            cellsArray[Random.Range(0, gridHeight-1), Random.Range(0, gridWidth-1)] = 1;
+            cellsArray[UnityEngine.Random.Range(0, gridHeight-1), UnityEngine.Random.Range(0, gridWidth-1)] = 1;
         }
 
         // Render cells after filling random cells
@@ -111,7 +112,7 @@ public class Instantiater : MonoBehaviour
         // fill random alive cells
         for (int i = 0; i < 1500; i++)
         {
-            cellsArray[Random.Range(20, 70), Random.Range(30, 120)] = 1; 
+            cellsArray[UnityEngine.Random.Range(20, 70), UnityEngine.Random.Range(30, 120)] = 1; 
         }
 
         cam = Camera.main;
@@ -197,27 +198,7 @@ public class Instantiater : MonoBehaviour
             }
             RenderCells();
         }
-        /*else if (Input.GetKey("w"))
-        {
-            Vector3 point = new Vector3();
-            Vector3 mousePos = Input.mousePosition;
-            {
-                mousePos.y = cam.pixelHeight - mousePos.y;
-                point = cam.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, cam.nearClipPlane));
 
-                int x = 0;
-                int y = 0;
-                x = (int)((point.x - cellSize / 2) / cellSize);
-                y = (int)((point.y - cellSize / 2) / cellSize);
-
-                print(" x= " + x);
-                print(" y= " + y);
-                if (x > 0 && x < gridWidth && y > 0 && y < gridHeight) cellsArray[y, x] = 3;
-                print("Diablo cell");
-                if (zones) UserEnvironment(x, y);
-            }
-            RenderCells();
-        }*/
         else if (Input.GetKey("h"))
         {
             Vector3 point = new Vector3();
@@ -334,10 +315,16 @@ public class Instantiater : MonoBehaviour
     public void ApplyRules()
     {
 
+
         FertileZone = GameObject.Find("FertileZone");
         fertilePos = FertileZone.transform.position;
         DeadZone = GameObject.Find("DeadZone");
         deadPos = DeadZone.transform.position;
+
+
+		print("Fert " + fertilePos);
+        print("Dead "+deadPos);
+
 
         int[,] nextGenGrid = new int[gridHeight, gridWidth];
         if (generationCount % 3 == 0)
@@ -345,22 +332,22 @@ public class Instantiater : MonoBehaviour
             print("undead");
             for (int i = 0; i < 50; i++)
             {
-                if (Random.Range(0f, 1f) > 0.50f)
+                if (UnityEngine.Random.Range(0f, 1f) > 0.50f)
                 {
-                    nextGenGrid[Random.Range(1, gridHeight - 1), Random.Range(1, gridWidth - 1)] = 4;
+                    nextGenGrid[UnityEngine.Random.Range(1, gridHeight - 1), UnityEngine.Random.Range(1, gridWidth - 1)] = 4;
                 }
             }
 		}
-        for (int i = 1; i < gridHeight-1; i++)
+        for (int i = 1; i < gridHeight-2; i++)
         {
-            for (int j = 1; j < gridWidth-1; j++)
+            for (int j = 1; j < gridWidth-2; j++)
             {
                 int livingNeighbours = CountLivingNeighbours(i, j);
 
 
                 if (ControlGod(i, j))
                 {
-                    nextGenGrid[i - 1, j] = 1;
+					nextGenGrid[i - 1, j] = 1;
                     nextGenGrid[i, j - 1] = 1;
                     nextGenGrid[i, j + 1] = 1;
                     nextGenGrid[i + 1, j] = 1;
@@ -369,43 +356,18 @@ public class Instantiater : MonoBehaviour
                 else if (ControlDiablo(i, j))
                 {
 
-					if (livingNeighbours <= 3 && livingNeighbours >= 1)
-					{
-						nextGenGrid[i - 1, j] = 3;
-						nextGenGrid[i, j - 1] = 3;
-						nextGenGrid[i, j + 1] = 3;
-						nextGenGrid[i + 1, j] = 3;
-						cellsArray[i - 1, j] = 0;
-						cellsArray[i, j - 1] = 0;
-						cellsArray[i, j + 1] = 0;
-						cellsArray[i + 1, j] = 0;
-
-						nextGenGrid[i, j] = 3;
-					}
-					else
-					{
-						int living = CountLivingNeighbours(i, j);
+					int living = CountLivingNeighbours(i, j);
 						if (living <= 3 && living!=0 )
 						{
-							nextGenGrid[i - 1, j] = 3;
-							nextGenGrid[i, j - 1] = 3;
-							nextGenGrid[i, j + 1] = 3;
-							nextGenGrid[i + 1, j] = 3;
 							cellsArray[i - 1, j] = 0;
 							cellsArray[i, j - 1] = 0;
 							cellsArray[i, j + 1] = 0;
 							cellsArray[i + 1, j] = 0;
-
-							nextGenGrid[i, j] = 3;
-						}
-						else
-						{
-							// Keep Diablo cell dead if it doesn't meet the reproduction condition
-							nextGenGrid[i, j] = 3;
-						}
+							nextGenGrid[i + 1, j] = 3;
+						    nextGenGrid[i - 1, j] = 3;
+							nextGenGrid[i, j - 1] = 3;
+							nextGenGrid[i, j + 1] = 3;
 					}
-
-					
 				}
 				else if (cellsArray[i, j] == 4)
 				{
@@ -424,15 +386,15 @@ public class Instantiater : MonoBehaviour
 				}
 				else if (livingNeighbours == 3)
                 { // reproduction, exactly 3 neighgbours
-                    nextGenGrid[i, j] = 1;
+					nextGenGrid[i, j] = 1;
                 }
                 else if (livingNeighbours == 2 && cellsArray[i, j] == 1)
                 { // exactly 2 neigh, the live cell survives
-                    nextGenGrid[i, j] = 1;
+					nextGenGrid[i, j] = 1;
                 }
                 else if (livingNeighbours > 3 || livingNeighbours<2)
                 {
-                    //die from overpopulation
+					//die from overpopulation
 					nextGenGrid[i, j] = 0;
 				}
 
@@ -442,16 +404,18 @@ public class Instantiater : MonoBehaviour
                     bool dead = PosDead(j * cellSize + cellSize / 2, (cellSize * gridHeight) - (i * cellSize + cellSize / 2));
                     if (dead )
                     {
-                        //print(i + " " + j + " dead");
-                        if (cellsArray[i, j] == 4) nextGenGrid[i, j] = 4;
+						//print(i + " " + j + " dead");
+						if (cellsArray[i, j] == 4) nextGenGrid[i, j] = 4;
                         else
                         {
-                            nextGenGrid[i, j] = 0;
-                            if (count % 3 == 0)
+                            if (UnityEngine.Random.Range(0f, 1f) > 0.90f)
                             {
+                                nextGenGrid[i + 1, j] = 3;
+                                nextGenGrid[i - 1, j] = 3;
+                                nextGenGrid[i , j + 1] = 3;
+                                nextGenGrid[i , j - 1] = 3;
 
-                                nextGenGrid[i, j] = 3;
-                                count++;
+
                             }
                         }		
 					}
@@ -487,65 +451,12 @@ public class Instantiater : MonoBehaviour
         }
 
         //dead zone
-        if (x > 5 && x < 20 && y > 50 && y < 70)
-        {
-            for (int i = 5; i <= 20; i++)
-                for (int j = 50; j <= 70; j++)
-                {
-                    cellsArray[j, i] = 3;
-                }
-            //print(" Dead Zone ");
-        }
+
 
         
     }
 
-    public void Environment()
-    {
-        if (zones)
-        {
-            int[,] nextGenGrid = new int[gridHeight, gridWidth];
-            nextGenGrid = cellsArray;
-            for (int i = 0; i < gridHeight; i++)
-            {
-                for (int j = 0; j < gridWidth; j++)
-                {
-                    bool fertile = PosFertile(j * cellSize + cellSize / 2, (cellSize * gridHeight) - (i * cellSize + cellSize / 2));
-                    bool dead = PosDead(j * cellSize + cellSize / 2, (cellSize * gridHeight) - (i * cellSize + cellSize / 2));
-                    int livingNeighbours = CountLivingNeighbours(i, j);
-
-                    if (livingNeighbours == 3)
-                    { // reproduction, exactly 3 neighgbours
-                        nextGenGrid[i, j] = 1;
-                    }
-                    else if (livingNeighbours == 2 && cellsArray[i, j] == 1)
-                    { // exactly 2 neigh, the live cell survives
-                        nextGenGrid[i, j] = 1;
-                    }
-
-                    if (dead)
-                    {
-                        print(i + " " + j);
-                        nextGenGrid[i, j] = 0;
-                    }
-                    else
-                    if (fertile)
-                    {
-                        if (livingNeighbours == 2 || livingNeighbours == 3)
-                        { // reproduction,  2 to 3 neighgbours
-                            nextGenGrid[i, j] = 1;
-                        }
-                        else if ((livingNeighbours == 1 || livingNeighbours == 2) && cellsArray[i, j] == 1)
-                        { // 1 or 2 neigh, the live cell survives
-                            nextGenGrid[i, j] = 1;
-                        }
-                    }
-                }
-            }
-
-            cellsArray = nextGenGrid; // GOING TO THE NEXT GEN!
-        }
-    }
+    
 
     bool Control(int x,int y)
     {
@@ -584,7 +495,7 @@ public class Instantiater : MonoBehaviour
         int result = 0;
         for (int iNeigh = i-1; iNeigh <= i+1; iNeigh++){ // i-1, i, i+1
             for (int jNeigh = j-1; jNeigh <= j+1; jNeigh++){ // j-1, j, j+1
-                if (cellsArray[iNeigh, jNeigh] != 0)
+                if (cellsArray[iNeigh, jNeigh] != 0  )
                    result += 1;
 
             }

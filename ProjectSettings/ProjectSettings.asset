@@ -13,8 +13,8 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: TM_Team_Lab_Legacy
-  productName: Life'sArenaShowdown
-  defaultCursor: {fileID: 2800000, guid: 658df4f46ad0e4efaa9d2c758aa98d30, type: 3}
+  productName: MICROCOSMOS
+  defaultCursor: {fileID: 2800000, guid: e7469a9f7dbc10c40a2b68a733a844dd, type: 3}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
   m_ShowUnitySplashScreen: 1
@@ -287,7 +287,7 @@ PlayerSettings:
   - m_BuildTarget: 
     m_Icons:
     - serializedVersion: 2
-      m_Icon: {fileID: 2800000, guid: 658df4f46ad0e4efaa9d2c758aa98d30, type: 3}
+      m_Icon: {fileID: 2800000, guid: e7469a9f7dbc10c40a2b68a733a844dd, type: 3}
       m_Width: 128
       m_Height: 128
       m_Kind: 0
